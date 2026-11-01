@@ -1,0 +1,63 @@
+﻿
+@model RailOps.ViewModels.FaultRejectViewModel
+
+@{
+    ViewData["Title"] = "Çözümü Reddet";
+}
+
+<div class="container mt-4">
+
+    <h3>Çözümü Reddet</h3>
+
+    <p class="text-muted">
+        Arıza No: @ViewBag.FaultNumber
+    </p>
+
+    <div class="alert alert-warning">
+        Bu işlem arızayı yeniden İşlemde
+        durumuna döndürecektir.
+    </div>
+
+    <form asp-controller="Fault"
+          asp-action="Reject"
+          method="post">
+
+        <input asp-for="FaultId" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+
+            <label asp-for="Reason"
+                   class="form-label"></label>
+
+            <textarea asp-for="Reason"
+                      class="form-control"
+                      rows="5"
+                      maxlength="1000"
+                      placeholder="Çözümün neden kabul edilmediğini açıklayın..."></textarea>
+
+            <span asp-validation-for="Reason"
+                  class="text-danger"></span>
+
+        </div>
+
+        <button type="submit"
+                class="btn btn-danger">
+            Ret İşlemini Kaydet
+        </button>
+
+        <a asp-action="Details"
+           asp-route-id="@Model.FaultId"
+           class="btn btn-outline-secondary">
+            Vazgeç
+        </a>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,130 @@
+﻿@model RailOps.ViewModels.WorkTeamLeaderAssignViewModel
+
+@{
+    ViewData["Title"] = "Ekip Sorumlusu Yönetimi";
+
+    bool hasCandidates = Model.CandidateOptions.Count > 0;
+
+    bool hasLeader =
+        !string.IsNullOrWhiteSpace(Model.TeamLeaderUserId);
+
+    bool leaderIsCandidate = Model.CandidateOptions
+        .Any(x => x.Value == Model.TeamLeaderUserId);
+}
+
+<div class="container-fluid py-3">
+
+    <div class="mb-4">
+        <a asp-controller="Admin"
+           asp-action="WorkTeamLeaders"
+           class="btn btn-outline-secondary btn-sm mb-3">
+            ← Teknik Ekip Yönetimine Dön
+        </a>
+
+        <h3 class="fw-semibold">
+            Ekip Sorumlusu Yönetimi
+        </h3>
+
+        <p class="text-muted mb-0">
+            @Model.DirectorateName /
+            @Model.SectionName /
+            @Model.LineGroupName
+        </p>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+
+            <h5 class="mb-3">
+                Ekip Sorumlusu
+            </h5>
+
+            @if (!hasCandidates)
+            {
+                <div class="alert alert-warning">
+                    Bu ekipte sorumlu olarak atanabilecek
+                    aktif Şef, Mühendis veya Formen bulunmuyor.
+                </div>
+            }
+
+            @if (hasLeader && !leaderIsCandidate)
+            {
+                <div class="alert alert-warning">
+                    Bu ekibin kayıtlı sorumlusu artık
+                    uygun adaylar arasında bulunmuyor.
+
+                    Mevcut sorumluluk bağlantısını
+                    kaldırabilirsiniz.
+                </div>
+            }
+
+            <form asp-controller="Admin"
+                  asp-action="AssignTeamLeader"
+                  method="post">
+
+                <input type="hidden"
+                       asp-for="WorkTeamId" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3">
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="TeamLeaderUserId"
+                           class="form-label fw-semibold">
+                        Ekip Sorumlusu
+                    </label>
+
+                    <select asp-for="TeamLeaderUserId"
+                            asp-items="Model.CandidateOptions"
+                            class="form-select">
+
+                        <option value="">
+                            — Sorumlu atanmamış —
+                        </option>
+
+                    </select>
+
+                    <span asp-validation-for="TeamLeaderUserId"
+                          class="text-danger">
+                    </span>
+                </div>
+
+                <div class="text-muted small mb-3">
+                    Uygun aday sayısı:
+                    @Model.CandidateOptions.Count
+                </div>
+
+                @if (hasCandidates || hasLeader)
+                {
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        @(hasCandidates
+                            ? "Değişiklikleri Kaydet"
+                            : "Sorumluluk Atamasını Kaldır")
+
+                    </button>
+                }
+                else
+                {
+                    <div class="text-muted small">
+                        Atanabilecek personel bulunmadığı
+                        için kayıt işlemi yapılamaz.
+                    </div>
+                }
+
+            </form>
+
+            <div class="alert alert-info mt-3 mb-0">
+                Sorumlu seçiminde görev unvanı önceliği:
+                Şef → Mühendis → Formen.
+
+                Sorumluluk atamasını kaldırmak için
+                "Sorumlu atanmamış" seçeneğini kullanın.
+            </div>
+
+        </div>
+    </div>
+
+</div>

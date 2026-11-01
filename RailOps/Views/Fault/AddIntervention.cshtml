@@ -1,0 +1,58 @@
+﻿
+@model RailOps.ViewModels.FaultInterventionCreateViewModel
+
+@{
+    ViewData["Title"] = "Müdahale Notu Ekle";
+}
+
+<div class="container mt-4">
+
+    <h3>Müdahale Notu Ekle</h3>
+
+    <p class="text-muted">
+        Arıza No: @ViewBag.FaultNumber
+    </p>
+
+    <form asp-controller="Fault"
+          asp-action="AddIntervention"
+          method="post">
+
+        <input asp-for="FaultId" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+
+            <label asp-for="Description"
+                   class="form-label"></label>
+
+            <textarea asp-for="Description"
+                      class="form-control"
+                      rows="5"
+                      placeholder="Yapılan işlemi açıklayın...">
+            </textarea>
+
+            <span asp-validation-for="Description"
+                  class="text-danger"></span>
+
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary">
+            Müdahaleyi Kaydet
+        </button>
+
+        <a asp-action="Details"
+           asp-route-id="@Model.FaultId"
+           class="btn btn-outline-secondary">
+            Vazgeç
+        </a>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

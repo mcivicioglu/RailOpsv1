@@ -1,0 +1,85 @@
+﻿@using RailOps.Entities
+@using RailOps.Helpers
+@model List<Fault>
+
+@{
+    ViewData["Title"] = "Arıza Kayıtları";
+}
+
+<div class="container-fluid py-4">
+
+    <h3 class="mb-4">Arıza Kayıtları</h3>
+    @{
+        var currentUserId =
+            User.FindFirst(
+                System.Security.Claims.ClaimTypes.NameIdentifier
+            )?.Value;
+    }
+    @if (!Model.Any())
+    {
+        <div class="alert alert-secondary">
+            Henüz arıza kaydı bulunmuyor.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Arıza No</th>
+                        <th>Arıza Başlığı</th>
+                        <th>Konum</th>
+                        <th>Durum</th>
+                        <th>Oluşturulma</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var fault in Model)
+                    {
+                        var statusText = fault.Status switch
+                        {
+                            FaultStatus.Open => "Açık",
+                            FaultStatus.InProgress => "İşlemde",
+                            FaultStatus.Resolved => "Giderildi",
+                            FaultStatus.Closed => "Kapandı",
+                            _ => "Bilinmiyor"
+                        };
+
+                        <tr>
+                            
+                            <td>@(fault.FaultNumber ?? $"Eski #{fault.FaultId}")</td>
+                            <td>@fault.FaultTitle</td>
+                            <td>@fault.FaultLocation</td>
+                            <td>@statusText</td>
+                            <td>
+                                @TurkeyTime.Format(fault.CreatedAt)
+                            </td>
+                            <td>
+                                <a asp-controller="Fault"
+                                   asp-action="Details"
+                                   asp-route-id="@fault.FaultId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Detay
+                                </a>
+                            </td>
+                            @if (fault.CreatedByUserId == currentUserId &&
+                                 fault.Status == RailOps.Entities.FaultStatus.Open)
+                            {
+                                <a asp-controller="Fault"
+                                   asp-action="Edit"
+                                   asp-route-id="@fault.FaultId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Düzenle
+                                </a>
+                            }
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+</div>

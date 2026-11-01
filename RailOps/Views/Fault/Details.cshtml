@@ -1,0 +1,396 @@
+﻿@using RailOps.Entities
+@using RailOps.Helpers
+@model Fault
+
+@{
+    ViewData["Title"] = "Arıza Detayı";
+
+    var currentUserId = User.FindFirst(
+        System.Security.Claims.ClaimTypes.NameIdentifier
+    )?.Value;
+
+    var hasValidIntervention = Model.Interventions.Any(i =>
+        !Model.Rejections.Any(r =>
+            r.RejectedAtUtc >= i.CreatedAtUtc));
+
+    var isTechnicalStaff = User.IsInRole("TechnicalStaff");
+    var isOperationsStaff = User.IsInRole("OperationsStaff");
+
+    var isAssignedTechnicalStaff =
+        isTechnicalStaff &&
+        !string.IsNullOrEmpty(currentUserId) &&
+        Model.AssignedToUserId == currentUserId;
+
+    var canClaim =
+        ViewData["CanClaimFault"] is bool allowed
+        && allowed;
+
+
+    var canAddIntervention =
+        Model.Status == FaultStatus.InProgress &&
+        isAssignedTechnicalStaff;
+
+    var hasInterventions = Model.Interventions.Any();
+
+    var canVerify =
+        Model.Status == FaultStatus.Resolved &&
+        isOperationsStaff &&
+        Model.AssignedToUserId != null &&
+        Model.AssignedToUserId != currentUserId;
+
+    var statusText = Model.Status switch
+    {
+        FaultStatus.Open => "Açık",
+        FaultStatus.InProgress => "İşlemde",
+        FaultStatus.Resolved => "İşletme Onayı Bekliyor",
+        FaultStatus.Closed => "Kapandı",
+        _ => "Bilinmiyor"
+    };
+}
+
+<div class="container py-4">
+    <h3 class="mb-4">Arıza Detayı</h3>
+
+    @if (TempData["ClaimError"] is string claimError)
+    {
+        <div class="alert alert-warning" role="alert">@claimError</div>
+    }
+
+    @if (TempData["ResolveError"] is string resolveError)
+    {
+        <div class="alert alert-warning" role="alert">@resolveError</div>
+    }
+
+    @if (TempData["ResolveSuccess"] is string resolveSuccess)
+    {
+        <div class="alert alert-success" role="status">@resolveSuccess</div>
+    }
+
+    @if (TempData["ApprovalError"] is string approvalError)
+    {
+        <div class="alert alert-warning" role="alert">@approvalError</div>
+    }
+
+    @if (TempData["ApprovalSuccess"] is string approvalSuccess)
+    {
+        <div class="alert alert-success" role="status">@approvalSuccess</div>
+    }
+
+    @if (TempData["RejectionError"] is string rejectionError)
+    {
+        <div class="alert alert-warning" role="alert">@rejectionError</div>
+    }
+
+    @if (TempData["RejectionSuccess"] is string rejectionSuccess)
+    {
+        <div class="alert alert-success" role="status">@rejectionSuccess</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">@Model.FaultTitle</h5>
+            <hr />
+
+            <p>
+                <strong>Arıza Numarası:</strong>
+                @(Model.FaultNumber ?? $"Eski #{Model.FaultId}")
+            </p>
+
+            <p>
+                <strong>Konum:</strong>
+                @Model.FaultLocation
+            </p>
+
+            
+            <!-- TEST-13/C-1: Sorumlu teknik ekip gösterimi düzeltmesi -->
+            <div class="mb-3">
+
+                <strong>Sorumlu Teknik Ekip:</strong>
+
+                @if (Model.ResponsibleWorkTeam != null)
+                {
+                    <div class="mt-2">
+
+                        <span class="badge bg-light text-dark border
+                            px-3 py-2 text-wrap text-start">
+
+                            @(Model.ResponsibleWorkTeam.Section.Directorate.DirectorateName)
+                            /
+                            @(Model.ResponsibleWorkTeam.Section.SectionName)
+                            /
+                            @(Model.ResponsibleWorkTeam.LineGroup.LineGroupName)
+
+                        </span>
+
+                    </div>
+                }
+                else
+                {
+                    <span class="text-muted">
+                        Henüz teknik ekip belirlenmedi.
+                    </span>
+                }
+
+            </div>
+
+
+            <p>
+                <strong>Durum:</strong>
+                @statusText
+            </p>
+
+
+            <p>
+                <strong>Oluşturulma:</strong>
+                @TurkeyTime.Format(Model.CreatedAt)
+            </p>
+
+
+            <p>
+                <strong>Kaydı Oluşturan:</strong>
+                @(Model.CreatedByUser?.FullName
+                    ?? Model.CreatedByUser?.UserName
+                    ?? "Eski kayıt")
+            </p>
+
+            <h6>Arıza Açıklaması</h6>
+            <p style="white-space: pre-wrap;">@Model.FaultDescription</p>
+
+            @if (Model.AssignedToUser != null)
+            {
+                <hr />
+
+                <p>
+                    <strong>Sorumlu Personel:</strong>
+                    @(Model.AssignedToUser.FullName
+                        ?? Model.AssignedToUser.UserName)
+                </p>
+
+                @if (Model.AssignedAtUtc.HasValue)
+                {
+
+                    @if (Model.AssignedAtUtc.HasValue)
+                    {
+                        <p>
+                            <strong>Üstlenme Zamanı (Türkiye):</strong>
+                            @TurkeyTime.Format(Model.AssignedAtUtc.Value)
+                        </p>
+                    }
+
+                }
+            }
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <a asp-controller="Fault"
+                   asp-action="Index"
+                   class="btn btn-outline-secondary">
+                    Listeye Dön
+                </a>
+                @if (Model.CreatedByUserId == currentUserId &&
+                    Model.Status == RailOps.Entities.FaultStatus.Open)
+                {
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.FaultId"
+                       class="btn btn-outline-primary">
+                        Düzenle
+                    </a>
+                }
+
+                @if (canClaim)
+                {
+                    <form asp-controller="Fault"
+                          asp-action="Claim"
+                          asp-route-id="@Model.FaultId"
+                          method="post">
+                        <button type="submit" class="btn btn-primary">
+                            Arızayı Üstlen
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* Müdahale geçmişi ve teknik işlemler *@
+    <section class="mb-4">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <h5 class="mb-0">Müdahale Geçmişi</h5>
+
+            @if (canAddIntervention)
+            {
+                <a asp-controller="Fault"
+                   asp-action="AddIntervention"
+                   asp-route-id="@Model.FaultId"
+                   class="btn btn-primary">
+                    Müdahale Notu Ekle
+                </a>
+            }
+        </div>
+
+        @if (!hasInterventions)
+        {
+            <div class="alert alert-light border">
+                Henüz müdahale kaydı bulunmuyor.
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Interventions
+                .OrderByDescending(x => x.CreatedAtUtc))
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                            <strong>
+                                @(item.PerformedByUser?.FullName
+                                    ?? item.PerformedByUser?.UserName
+                                    ?? "Bilinmeyen personel")
+                            </strong>
+                            <small class="text-muted">
+                                @item.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC
+                            </small>
+                        </div>
+
+                        <div style="white-space: pre-wrap;">@item.Description</div>
+                    </div>
+                </div>
+            }
+        }
+
+        @if (canAddIntervention)
+        {
+            @if (hasValidIntervention)
+            {
+                <form asp-controller="Fault"
+                      asp-action="Resolve"
+                      asp-route-id="@Model.FaultId"
+                      method="post">
+                    <button type="submit" class="btn btn-success">
+                        Müdahaleyi Tamamla
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Müdahaleyi tamamlamadan önce en az bir müdahale notu ekleyin.
+                </div>
+            }
+        }
+    </section>
+
+    @* Teknik çözüm durumu *@
+    @if (Model.Status == FaultStatus.Resolved)
+    {
+        <div class="alert alert-info">
+            Teknik müdahale tamamlandı. İşletme doğrulaması bekleniyor.
+        </div>
+
+        @if (Model.ResolvedAtUtc.HasValue)
+        {
+            <p>
+                <strong>Tamamlanma Zamanı (Türkiye):</strong>
+                @TurkeyTime.Format(Model.ResolvedAtUtc.Value)
+            </p>
+        }
+    }
+
+    @* İşletme işlemleri: onay ve ret aynı yetki koşuluna bağlı. *@
+    @if (canVerify)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>İşletme Doğrulaması</h5>
+
+                <p class="text-muted">
+                    Müdahale kayıtlarını kontrol ederek çözümü
+                    onaylayabilir veya gerekçe belirterek reddedebilirsiniz.
+                </p>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <form asp-controller="Fault"
+                          asp-action="Approve"
+                          asp-route-id="@Model.FaultId"
+                          method="post">
+                        <button type="submit" class="btn btn-success">
+                            Çözümü Onayla ve Arızayı Kapat
+                        </button>
+                    </form>
+
+                    <a asp-controller="Fault"
+                       asp-action="Reject"
+                       asp-route-id="@Model.FaultId"
+                       class="btn btn-outline-danger">
+                        Çözümü Reddet
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Kapanış bilgileri *@
+    @if (Model.Status == FaultStatus.Closed)
+    {
+        <div class="alert alert-success">
+            Arıza İşletme tarafından doğrulandı ve kapatıldı.
+        </div>
+
+        <p>
+            <strong>Onaylayan Personel:</strong>
+            @(Model.ClosedByUser?.FullName
+                ?? Model.ClosedByUser?.UserName
+                ?? "Bilgi bulunamadı")
+        </p>
+
+        @if (Model.ClosedAtUtc.HasValue)
+        {
+            <p>
+                <strong>Kapanış Zamanı:</strong>
+                @TurkeyTime.Format(Model.ClosedAtUtc.Value)
+            </p>
+        }
+    }
+
+    @* İşletme ret geçmişi *@
+    @if (Model.Rejections.Any())
+    {
+        <hr class="my-4" />
+        <h5 class="mb-3">İşletme Ret Geçmişi</h5>
+
+        @foreach (var rejection in Model.Rejections
+            .OrderByDescending(x => x.RejectedAtUtc))
+        {
+            <div class="card border-warning mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                        <strong>
+                            @(rejection.RejectedByUser?.FullName
+                                ?? rejection.RejectedByUser?.UserName
+                                ?? "Bilinmeyen personel")
+                        </strong>
+
+                        <small class="text-muted">
+                            Ret zamanı:
+                            @rejection.RejectedAtUtc.ToString("dd.MM.yyyy HH:mm") UTC
+                        </small>
+                    </div>
+
+                    @if (rejection.PreviousResolvedAtUtc.HasValue)
+                    {
+                        <p class="text-muted small">
+                            Reddedilen çözüm zamanı:
+                            @TurkeyTime.Format(rejection.PreviousResolvedAtUtc.Value)
+                        </p>
+                    }
+
+                    <strong>Ret Gerekçesi</strong>
+                    <div style="white-space: pre-wrap;">@rejection.Reason</div>
+                </div>
+            </div>
+        }
+    }
+
+    <partial name="_StatusHistory"
+             model="Model.StatusHistory" />
+
+</div>

@@ -1,0 +1,77 @@
+﻿
+@model RailOps.Models.FaultEditViewModel
+
+@{
+    ViewData["Title"] = "Arıza Düzenle";
+}
+
+<div class="container py-4">
+
+    <h3 class="mb-4">Arıza Düzenle</h3>
+
+    <form asp-controller="Fault"
+          asp-action="Edit"
+          asp-route-id="@Model.FaultId"
+          method="post">
+
+        <input asp-for="FaultId" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="FaultTitle"
+                   class="form-label">
+                Arıza Başlığı
+            </label>
+
+            <input asp-for="FaultTitle"
+                   class="form-control" />
+
+            <span asp-validation-for="FaultTitle"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="FaultLocation"
+                   class="form-label">
+                Arıza Konumu
+            </label>
+
+            <input asp-for="FaultLocation"
+                   class="form-control" />
+
+            <span asp-validation-for="FaultLocation"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="FaultDescription"
+                   class="form-label">
+                Arıza Açıklaması
+            </label>
+
+            <textarea asp-for="FaultDescription"
+                      class="form-control"
+                      rows="4"></textarea>
+
+            <span asp-validation-for="FaultDescription"
+                  class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Değişiklikleri Kaydet
+        </button>
+
+        <a asp-action="Details"
+           asp-route-id="@Model.FaultId"
+           class="btn btn-outline-secondary">
+            Vazgeç
+        </a>
+
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

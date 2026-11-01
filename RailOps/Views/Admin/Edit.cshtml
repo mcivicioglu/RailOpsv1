@@ -1,0 +1,160 @@
+﻿@model RailOps.ViewModels.AdminUserEditViewModel
+@using RailOps.Entities
+
+@{
+    ViewData["Title"] = "Personel Düzenle";
+}
+
+<div class="container py-4">
+
+    <h3 class="mb-2">Personel Düzenle</h3>
+
+    <p class="text-muted mb-4">
+        Personelin ad-soyad bilgisini güncelleyebilirsiniz.
+    </p>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form asp-controller="Admin"
+                  asp-action="Edit"
+                  method="post">
+
+                <input asp-for="UserId" type="hidden" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Sicil Numarası
+                    </label>
+
+                    <input value="@Model.SicilNo"
+                           class="form-control"
+                           readonly />
+
+                    <div class="form-text">
+                        Sicil numarası bu ekrandan değiştirilemez.
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label asp-for="FullName"
+                           class="form-label"></label>
+
+                    <input asp-for="FullName"
+                           class="form-control" />
+
+                    <span asp-validation-for="FullName"
+                          class="text-danger"></span>
+
+                    @* Teknik personel için ekip seçimi *@
+                    @if (Model.IsTechnicalStaff)
+                    {
+                        <div class="mb-3">
+
+                            <label asp-for="WorkTeamId"
+                                   class="form-label fw-semibold">
+                                Bağlı Olduğu Ekip
+                            </label>
+
+                            <select asp-for="WorkTeamId"
+                                    asp-items="Model.WorkTeamOptions"
+                                    class="form-select">
+
+                                <option value="">
+                                    — Ekibe atanmadı —
+                                </option>
+
+                            </select>
+
+                            <span asp-validation-for="WorkTeamId"
+                                  class="text-danger">
+                            </span>
+
+                            @* Teknik personel görev unvanı *@
+                            @if (Model.IsTechnicalStaff)
+                            {
+                                <div class="mb-3">
+
+                                    <label asp-for="JobTitle"
+                                           class="form-label fw-semibold">
+                                        Görev Unvanı
+                                    </label>
+
+                                    <select asp-for="JobTitle"
+                                            class="form-select">
+
+                                        <option value="">
+                                            — Görev unvanı atanmamış —
+                                        </option>
+
+                                        <option value="@((int)TechnicalJobTitle.Chief)">
+                                            Şef
+                                        </option>
+
+                                        <option value="@((int)TechnicalJobTitle.Engineer)">
+                                            Mühendis
+                                        </option>
+
+                                        <option value="@((int)TechnicalJobTitle.Foreman)">
+                                            Formen
+                                        </option>
+
+                                        <option value="@((int)TechnicalJobTitle.Technician)">
+                                            Teknisyen
+                                        </option>
+
+                                    </select>
+
+                                    <span asp-validation-for="JobTitle"
+                                          class="text-danger"></span>
+
+                                    <div class="form-text">
+                                        Personelin görev unvanını seçebilirsiniz.
+                                        Unvan atanmamış seçeneğiyle bu bilgiyi
+                                        boş bırakabilirsiniz.
+                                    </div>
+
+                                </div>
+                            }
+
+                            <div class="form-text">
+                                Personelin görev yaptığı teknik ekibi
+                                seçebilirsiniz.
+
+                                Ekip seçimini boş bırakarak personelin
+                                mevcut ekip bağlantısını kaldırabilirsiniz.
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+                <div class="d-flex gap-2">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Değişiklikleri Kaydet
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn btn-outline-secondary">
+                        Vazgeç
+                    </a>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

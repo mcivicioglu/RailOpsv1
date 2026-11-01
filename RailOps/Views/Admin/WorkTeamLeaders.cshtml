@@ -1,0 +1,88 @@
+﻿@model List<RailOps.ViewModels.WorkTeamLeaderListItemViewModel>
+
+@{
+    ViewData["Title"] = "Teknik Ekip Yönetimi";
+}
+
+<div class="container-fluid py-3">
+
+    <div class="mb-4">
+        <h3 class="fw-semibold">
+            Teknik Ekip Yönetimi
+        </h3>
+
+        <p class="text-muted mb-0">
+            Teknik ekipler ve mevcut ekip sorumluları
+        </p>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Müdürlük</th>
+                            <th>Şeflik</th>
+                            <th>Hat Grubu</th>
+                            <th>Ekip Sorumlusu</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var team in Model)
+                        {
+                            <tr>
+                                <td>@team.DirectorateName</td>
+
+                                <td>@team.SectionName</td>
+
+                                <td>@team.LineGroupName</td>
+
+                                <td>
+                                    @if (string.IsNullOrWhiteSpace(
+                                        team.TeamLeaderName))
+                                    {
+                                        <span class="badge
+                                            bg-secondary-subtle
+                                            text-secondary">
+                                            Sorumlu Atanmamış
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-medium">
+                                            @team.TeamLeaderName
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <a asp-controller="Admin"
+                                       asp-action="AssignTeamLeader"
+                                       asp-route-id="@team.WorkTeamId"
+                                       class="btn btn-outline-primary btn-sm">
+
+                                        Adayları Gör
+
+                                    </a>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+            <div class="text-muted small mt-2">
+                Toplam teknik ekip: @Model.Count
+            </div>
+
+        </div>
+    </div>
+
+</div>
